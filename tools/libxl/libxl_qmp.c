@@ -1082,8 +1082,8 @@ static void dm_state_save_to_fdset(libxl__egc *egc, libxl__ev_qmp *ev, int fdset
 
 error:
     assert(rc);
-    /* TODO: only in non-stubdom case */
-    libxl__remove_file(gc, dsps->dm_savefile);
+    if (!libxl_get_stubdom_id(CTX, dsps->domid))
+        libxl__remove_file(gc, dsps->dm_savefile);
     dsps->callback_device_model_done(egc, dsps, rc);
 }
 
