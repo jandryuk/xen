@@ -447,8 +447,8 @@ struct libxenvchan *libxenvchan_client_init(struct xentoollog_logger *logger,
 	ctrl->ring->cli_live = 1;
 	ctrl->ring->srv_notify = VCHAN_NOTIFY_WRITE;
 
-    /* wake up the server */
-    xenevtchn_notify(ctrl->event, ctrl->event_port);
+	/* wake up the server */
+	xenevtchn_notify(ctrl->event, ctrl->event_port);
 
  out:
 	if (xs)
