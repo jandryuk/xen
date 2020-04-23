@@ -178,16 +178,25 @@ int libxl__domain_build_info_setdefault(libxl__gc *gc,
                 case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL:
                     b_info->stubdomain_kernel =
                         libxl__abs_path(NOGC, "ioemu-stubdom.gz", libxl__xenfirmwaredir_path());
-                    b_info->stubdomain_ramdisk = NULL;
                     break;
                 case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN:
                     b_info->stubdomain_kernel =
                         libxl__abs_path(NOGC,
-                                "stubdom-linux-kernel",
+                                "qemu-stubdom-linux-kernel",
                                 libxl__xenfirmwaredir_path());
+                    break;
+                default:
+                    abort();
+            }
+        }
+        if (!b_info->stubdomain_ramdisk) {
+            switch (b_info->device_model_version) {
+                case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN_TRADITIONAL:
+                    break;
+                case LIBXL_DEVICE_MODEL_VERSION_QEMU_XEN:
                     b_info->stubdomain_ramdisk =
                         libxl__abs_path(NOGC,
-                                "stubdom-linux-rootfs",
+                                "qemu-stubdom-linux-rootfs",
                                 libxl__xenfirmwaredir_path());
                     break;
                 default:
