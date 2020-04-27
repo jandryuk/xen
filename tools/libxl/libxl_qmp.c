@@ -718,6 +718,7 @@ void libxl__qmp_close(libxl__qmp_handler *qmp)
 
 void libxl__qmp_cleanup(libxl__gc *gc, uint32_t domid)
 {
+    uint32_t target_domid;
     char *qmp_socket;
 
     qmp_socket = GCSPRINTF("%s/qmp-libxl-%d", libxl__run_dir_path(), domid);
@@ -732,6 +733,12 @@ void libxl__qmp_cleanup(libxl__gc *gc, uint32_t domid)
         if (errno != ENOENT) {
             LOGED(ERROR, domid, "Failed to remove QMP socket file %s", qmp_socket);
         }
+    }
+
+    if (libxl_is_stubdom(libxl__gc_owner(gc), domid, &target_domid) &&
+        libxl__stubdomain_is_linux_running(gc, target_domid)) {
+        char *path = GCSPRINTF("/local/domain/%d/image/qmp-proxy-pid", domid);
+        libxl__kill_xs_path(gc, path, "QMP Proxy");
     }
 }
 
