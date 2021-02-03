@@ -26,7 +26,16 @@
 #define CPUID5_ECX_EXTENSIONS_SUPPORTED 0x1
 #define CPUID5_ECX_INTERRUPT_BREAK      0x2
 
-#define CPUID_PM_LEAF                    6
+#define CPUID_PM_LEAF                                6
+#define CPUID6_EAX_HWP                               (_AC(1, U) <<  7)
+#define CPUID6_EAX_HWP_Notification                  (_AC(1, U) <<  8)
+#define CPUID6_EAX_HWP_Activity_Window               (_AC(1, U) <<  9)
+#define CPUID6_EAX_HWP_Energy_Performance_Preference (_AC(1, U) << 10)
+#define CPUID6_EAX_HWP_Package_Level_Request         (_AC(1, U) << 11)
+#define CPUID6_EAX_HDC                               (_AC(1, U) << 13)
+#define CPUID6_EAX_HWP_PECI                          (_AC(1, U) << 16)
+#define CPUID6_EAX_FAST_HWP_MSR                      (_AC(1, U) << 18)
+#define CPUID6_EAX_HW_FEEDBACK                       (_AC(1, U) << 19)
 #define CPUID6_ECX_APERFMPERF_CAPABILITY 0x1
 
 /* CPUID level 0x00000001.edx */

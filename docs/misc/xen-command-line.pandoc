@@ -1310,6 +1310,15 @@ Specify whether guests are to be given access to physical port 80
 (often used for debugging purposes), to override the DMI based
 detection of systems known to misbehave upon accesses to that port.
 
+### hwp (x86)
+> `= <boolean>`
+
+> Default: `false`
+
+Specifies whether Xen uses Hardware-Controlled Performance States (HWP)
+on supported Intel hardware.  HWP is a Skylake+ feature which provides
+better CPU power management.
+
 ### idle_latency_factor (x86)
 > `= <integer>`
 
