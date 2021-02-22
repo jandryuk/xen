@@ -115,6 +115,7 @@ extern struct cpufreq_governor cpufreq_gov_dbs;
 extern struct cpufreq_governor cpufreq_gov_userspace;
 extern struct cpufreq_governor cpufreq_gov_performance;
 extern struct cpufreq_governor cpufreq_gov_powersave;
+extern bool cpufreq_governor_internal;
 
 extern struct list_head cpufreq_governor_list;
 

@@ -57,6 +57,7 @@ struct cpufreq_dom {
 };
 static LIST_HEAD_READ_MOSTLY(cpufreq_dom_list_head);
 
+bool __read_mostly cpufreq_governor_internal;
 struct cpufreq_governor *__read_mostly cpufreq_opt_governor;
 LIST_HEAD_READ_MOSTLY(cpufreq_governor_list);
 
@@ -120,6 +121,9 @@ struct cpufreq_governor *__find_governor(const char *governor)
 int __init cpufreq_register_governor(struct cpufreq_governor *governor)
 {
     if (!governor)
+        return -EINVAL;
+
+    if (cpufreq_governor_internal && strstr(governor->name, "internal") == NULL)
         return -EINVAL;
 
     if (__find_governor(governor->name) != NULL)
