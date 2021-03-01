@@ -246,4 +246,7 @@ int write_userspace_scaling_setspeed(unsigned int cpu, unsigned int freq);
 void cpufreq_dbs_timer_suspend(void);
 void cpufreq_dbs_timer_resume(void);
 
+/********************** hwp hypercall helper *************************/
+int get_hwp_para(struct cpufreq_policy *policy, struct xen_hwp_para *hwp_para);
+
 #endif /* __XEN_CPUFREQ_PM_H__ */

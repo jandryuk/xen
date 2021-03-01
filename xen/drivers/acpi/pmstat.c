@@ -290,6 +290,12 @@ static int get_cpufreq_para(struct xen_sysctl_pm_op *op)
             &op->u.get_para.u.ondemand.sampling_rate,
             &op->u.get_para.u.ondemand.up_threshold);
     }
+
+    if ( !strnicmp(op->u.get_para.scaling_governor,
+                   "hwp-internal", CPUFREQ_NAME_LEN) )
+    {
+        ret = get_hwp_para(policy, &op->u.get_para.u.hwp_para);
+    }
     op->u.get_para.turbo_enabled = cpufreq_get_turbo_status(op->cpuid);
 
     return ret;

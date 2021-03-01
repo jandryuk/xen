@@ -523,6 +523,30 @@ static const struct cpufreq_driver __initconstrel hwp_cpufreq_driver =
     .update = hwp_cpufreq_update,
 };
 
+int get_hwp_para(struct cpufreq_policy *policy, struct xen_hwp_para *hwp_para)
+{
+    unsigned int cpu = policy->cpu;
+    struct hwp_drv_data *data = hwp_drv_data[cpu];
+
+    if ( data == NULL )
+        return -EINVAL;
+
+    hwp_para->hw_feature        =
+        feature_hwp_activity_window ? XEN_SYSCTL_HWP_FEAT_ACT_WINDOW  : 0 |
+        feature_hwp_energy_perf     ? XEN_SYSCTL_HWP_FEAT_ENERGY_PERF : 0;
+    hwp_para->hw_lowest         = data->hw_lowest;
+    hwp_para->hw_most_efficient = data->hw_most_efficient;
+    hwp_para->hw_guaranteed     = data->hw_guaranteed;
+    hwp_para->hw_highest        = data->hw_highest;
+    hwp_para->minimum           = data->minimum;
+    hwp_para->maximum           = data->maximum;
+    hwp_para->energy_perf       = data->energy_perf;
+    hwp_para->activity_window   = data->activity_window;
+    hwp_para->desired           = data->desired;
+
+    return 0;
+}
+
 int hwp_register_driver(void)
 {
     int ret;
