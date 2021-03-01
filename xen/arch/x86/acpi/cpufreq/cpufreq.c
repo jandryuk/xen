@@ -340,7 +340,7 @@ static unsigned int get_cur_freq_on_cpu(unsigned int cpu)
     return extract_freq(get_cur_val(cpumask_of(cpu)), data);
 }
 
-static void feature_detect(void *info)
+void intel_feature_detect(void *info)
 {
     struct cpufreq_policy *policy = info;
     unsigned int eax;
@@ -596,7 +596,7 @@ acpi_cpufreq_cpu_init(struct cpufreq_policy *policy)
     /* Check for APERF/MPERF support in hardware
      * also check for boost support */
     if (c->x86_vendor == X86_VENDOR_INTEL && c->cpuid_level >= 6)
-        on_selected_cpus(cpumask_of(cpu), feature_detect, policy, 1);
+        on_selected_cpus(cpumask_of(cpu), intel_feature_detect, policy, 1);
 
     /*
      * the first call to ->target() should result in us actually
