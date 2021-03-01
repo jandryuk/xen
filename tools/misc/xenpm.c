@@ -708,6 +708,43 @@ void start_gather_func(int argc, char *argv[])
     pause();
 }
 
+static void calculate_hwp_activity_window(const xc_hwp_para_t *hwp,
+                                          unsigned int *activity_window,
+                                          const char **units)
+{
+    unsigned int mantissa = hwp->activity_window & 0x7f;
+    unsigned int exponent = ( hwp->activity_window >> 7 ) & 0x7;
+    unsigned int multiplier = 1;
+
+    if ( hwp->activity_window == 0 )
+    {
+        *units = "hardware selected";
+        *activity_window = 0;
+
+        return;
+    }
+
+    if ( exponent >= 6 )
+    {
+        *units = "s";
+        exponent -= 6;
+    }
+    else if ( exponent >= 3 )
+    {
+        *units = "ms";
+        exponent -= 3;
+    }
+    else
+    {
+        *units = "us";
+    }
+
+    for ( unsigned int i = 0; i < exponent; i++ )
+        multiplier *= 10;
+
+    *activity_window = mantissa * multiplier;
+}
+
 /* print out parameters about cpu frequency */
 static void print_cpufreq_para(int cpuid, struct xc_get_cpufreq_para *p_cpufreq)
 {
@@ -721,7 +758,7 @@ static void print_cpufreq_para(int cpuid, struct xc_get_cpufreq_para *p_cpufreq)
         printf(" %d", p_cpufreq->affected_cpus[i]);
     printf("\n");
 
-    if (internal)
+    if ( internal )
     {
         printf("cpuinfo frequency    : base [%u] turbo [%u]\n",
                p_cpufreq->cpuinfo_min_freq,
@@ -760,7 +797,7 @@ static void print_cpufreq_para(int cpuid, struct xc_get_cpufreq_para *p_cpufreq)
                p_cpufreq->u.ondemand.up_threshold);
     }
 
-    if (!internal)
+    if ( !internal )
     {
         printf("scaling_avail_freq   :");
         for ( i = 0; i < p_cpufreq->freq_num; i++ )
@@ -775,6 +812,40 @@ static void print_cpufreq_para(int cpuid, struct xc_get_cpufreq_para *p_cpufreq)
                p_cpufreq->scaling_max_freq,
                p_cpufreq->scaling_min_freq,
                p_cpufreq->scaling_cur_freq);
+    }
+
+    if ( strcmp(p_cpufreq->scaling_governor, "hwp-internal") == 0 )
+    {
+        const xc_hwp_para_t *hwp = &p_cpufreq->u.hwp_para;
+
+        printf("hwp variables        :\n");
+        printf("  hardware limits    : lowest [%u] most_efficient [%u]\n",
+               hwp->hw_lowest, hwp->hw_most_efficient);
+        printf("  hardware limits    : guaranteed [%u] highest [%u]\n",
+               hwp->hw_guaranteed, hwp->hw_highest);
+        printf("  configured limits  : min [%u] max [%u] energy_perf [%u]\n",
+               hwp->minimum, hwp->maximum, hwp->energy_perf);
+
+        if ( hwp->hw_feature & XEN_SYSCTL_HWP_FEAT_ENERGY_PERF )
+        {
+            printf("  configured limits  : energy_perf [%u%s]\n",
+                   hwp->energy_perf,
+                   hwp->energy_perf ? "" : " hw autonomous");
+        }
+
+        if ( hwp->hw_feature & XEN_SYSCTL_HWP_FEAT_ACT_WINDOW )
+        {
+            unsigned int activity_window;
+            const char *units;
+
+            calculate_hwp_activity_window(hwp, &activity_window, &units);
+            printf("  configured limits  : activity_window [%u %s]\n",
+                   activity_window, units);
+        }
+
+        printf("  configured limits  : desired [%u%s]\n",
+               hwp->desired,
+               hwp->desired ? "" : " hw autonomous");
     }
 
     printf("turbo mode           : %s\n",
