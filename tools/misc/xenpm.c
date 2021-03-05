@@ -79,16 +79,25 @@ void help_func(int argc, char *argv[])
     show_help();
 }
 
-static void parse_cpuid(const char *arg, int *cpuid)
+static int parse_cpuid_non_fatal(const char *arg, int *cpuid)
 {
     if ( sscanf(arg, "%d", cpuid) != 1 || *cpuid < 0 )
     {
         if ( strcasecmp(arg, "all") )
-        {
-            fprintf(stderr, "Invalid CPU identifier: '%s'\n", arg);
-            exit(EINVAL);
-        }
+            return -1;
+
         *cpuid = -1;
+    }
+
+    return 0;
+}
+
+static void parse_cpuid(const char *arg, int *cpuid)
+{
+    if ( parse_cpuid_non_fatal(arg, cpuid) )
+    {
+        fprintf(stderr, "Invalid CPU identifier: '%s'\n", arg);
+        exit(EINVAL);
     }
 }
 
