@@ -584,6 +584,7 @@ int set_hwp_para(struct cpufreq_policy *policy,
     }
 
     if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_DESIRED &&
+         set_hwp->desired != 0 &&
          ( set_hwp->desired < data->hw_lowest ||
            set_hwp->desired > data->hw_highest ) )
     {
