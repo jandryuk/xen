@@ -547,6 +547,119 @@ int get_hwp_para(struct cpufreq_policy *policy, struct xen_hwp_para *hwp_para)
     return 0;
 }
 
+int set_hwp_para(struct cpufreq_policy *policy,
+                 struct xen_set_hwp_para *set_hwp)
+{
+    unsigned int cpu = policy->cpu;
+    struct hwp_drv_data *data = hwp_drv_data[cpu];
+
+    if ( data == NULL )
+        return -EINVAL;
+
+    /* Validate all parameters first */
+    if ( set_hwp->set_params & ~XEN_SYSCTL_HWP_SET_PARAM_MASK )
+    {
+        hwp_err("Invalid bits in hwp set_params %u\n",
+                set_hwp->set_params);
+
+        return -EINVAL;
+    }
+
+    if ( set_hwp->activity_window & ~XEN_SYSCTL_HWP_ACT_WINDOW_MASK )
+    {
+        hwp_err("Invalid bits in activity window %u\n",
+                set_hwp->activity_window);
+
+        return -EINVAL;
+    }
+
+    if ( !feature_hwp_energy_perf &&
+         set_hwp->set_params & XEN_SYSCTL_HWP_SET_ENERGY_PERF &&
+         set_hwp->energy_perf > 0xf )
+    {
+        hwp_err("energy_perf %u out of range for IA32_ENERGY_PERF_BIAS\n",
+                set_hwp->energy_perf);
+
+        return -EINVAL;
+    }
+
+    if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_DESIRED &&
+         ( set_hwp->desired < data->hw_lowest ||
+           set_hwp->desired > data->hw_highest ) )
+    {
+        hwp_err("hwp desired %u is out of range (%u ... %u)\n",
+                set_hwp->desired, data->hw_lowest, data->hw_highest);
+
+        return -EINVAL;
+    }
+
+    /*
+     * minimum & maximum are not validated as hardware doesn't seem to care
+     * and the SDM says CPUs will clip internally.
+     */
+
+    /* Apply presets */
+    switch ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_PRESET_MASK )
+    {
+    case XEN_SYSCTL_HWP_SET_PRESET_POWERSAVE:
+        data->minimum = data->hw_lowest;
+        data->maximum = data->hw_lowest;
+        data->activity_window = 0;
+        if ( feature_hwp_energy_perf )
+            data->energy_perf = 0xff;
+        else
+            data->energy_perf = 0xf;
+        data->desired = 0;
+        break;
+    case XEN_SYSCTL_HWP_SET_PRESET_PERFORMANCE:
+        data->minimum = data->hw_highest;
+        data->maximum = data->hw_highest;
+        data->activity_window = 0;
+        data->energy_perf = 0;
+        data->desired = 0;
+        break;
+    case XEN_SYSCTL_HWP_SET_PRESET_BALANCE:
+        data->minimum = data->hw_lowest;
+        data->maximum = data->hw_highest;
+        data->activity_window = 0;
+        data->energy_perf = 0x80;
+        if ( feature_hwp_energy_perf )
+            data->energy_perf = 0x80;
+        else
+            data->energy_perf = 0x7;
+        data->desired = 0;
+        break;
+    case XEN_SYSCTL_HWP_SET_PRESET_NONE:
+        break;
+    default:
+        printk("HWP: Invalid preset value: %u\n",
+               set_hwp->set_params & XEN_SYSCTL_HWP_SET_PRESET_MASK);
+
+        return -EINVAL;
+    }
+
+    /* Further customize presets if needed */
+    if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_MINIMUM )
+        data->minimum = set_hwp->minimum;
+
+    if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_MAXIMUM )
+        data->maximum = set_hwp->maximum;
+
+    if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_ENERGY_PERF )
+        data->energy_perf = set_hwp->energy_perf;
+
+    if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_DESIRED )
+        data->desired = set_hwp->desired;
+
+    if ( set_hwp->set_params & XEN_SYSCTL_HWP_SET_ACT_WINDOW )
+        data->activity_window = set_hwp->activity_window &
+                                XEN_SYSCTL_HWP_ACT_WINDOW_MASK;
+
+    hwp_cpufreq_target(policy, 0, 0);
+
+    return 0;
+}
+
 int hwp_register_driver(void)
 {
     int ret;

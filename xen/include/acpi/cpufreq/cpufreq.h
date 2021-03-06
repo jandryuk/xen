@@ -248,5 +248,7 @@ void cpufreq_dbs_timer_resume(void);
 
 /********************** hwp hypercall helper *************************/
 int get_hwp_para(struct cpufreq_policy *policy, struct xen_hwp_para *hwp_para);
+int set_hwp_para(struct cpufreq_policy *policy,
+                 struct xen_set_hwp_para *set_hwp);
 
 #endif /* __XEN_CPUFREQ_PM_H__ */

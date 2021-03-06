@@ -318,6 +318,36 @@ struct xen_hwp_para {
     uint8_t energy_perf;
 };
 
+/* set multiple values simultaneously when set_args bit is set */
+struct xen_set_hwp_para {
+    uint16_t set_params; /* bitflags for valid values */
+#define XEN_SYSCTL_HWP_SET_DESIRED              (1U << 0)
+#define XEN_SYSCTL_HWP_SET_ENERGY_PERF          (1U << 1)
+#define XEN_SYSCTL_HWP_SET_ACT_WINDOW           (1U << 2)
+#define XEN_SYSCTL_HWP_SET_MINIMUM              (1U << 3)
+#define XEN_SYSCTL_HWP_SET_MAXIMUM              (1U << 4)
+#define XEN_SYSCTL_HWP_SET_PRESET_MASK          (0xf000)
+#define XEN_SYSCTL_HWP_SET_PRESET_NONE          (0x0000)
+#define XEN_SYSCTL_HWP_SET_PRESET_BALANCE       (0x1000)
+#define XEN_SYSCTL_HWP_SET_PRESET_POWERSAVE     (0x2000)
+#define XEN_SYSCTL_HWP_SET_PRESET_PERFORMANCE   (0x3000)
+#define XEN_SYSCTL_HWP_SET_PARAM_MASK ((uint16_t)( \
+                                  XEN_SYSCTL_HWP_SET_PRESET_MASK | \
+                                  XEN_SYSCTL_HWP_SET_DESIRED     | \
+                                  XEN_SYSCTL_HWP_SET_ENERGY_PERF | \
+                                  XEN_SYSCTL_HWP_SET_ACT_WINDOW  | \
+                                  XEN_SYSCTL_HWP_SET_MINIMUM     | \
+                                  XEN_SYSCTL_HWP_SET_MAXIMUM     ))
+
+    uint16_t activity_window; /* 7bit mantissa and 3bit exponent */
+#define XEN_SYSCTL_HWP_ACT_WINDOW_MASK          (0x03ff)
+    uint8_t minimum;
+    uint8_t maximum;
+    uint8_t desired;
+    uint8_t energy_perf; /* 0-255 or 0-15 depending on HW support */
+};
+
+
 /*
  * cpufreq para name of this structure named
  * same as sysfs file name of native linux
@@ -379,6 +409,7 @@ struct xen_sysctl_pm_op {
     #define SET_CPUFREQ_GOV            (CPUFREQ_PARA | 0x02)
     #define SET_CPUFREQ_PARA           (CPUFREQ_PARA | 0x03)
     #define GET_CPUFREQ_AVGFREQ        (CPUFREQ_PARA | 0x04)
+    #define SET_CPUFREQ_HWP            (CPUFREQ_PARA | 0x05)
 
     /* set/reset scheduler power saving option */
     #define XEN_SYSCTL_pm_op_set_sched_opt_smt    0x21
@@ -405,6 +436,7 @@ struct xen_sysctl_pm_op {
         struct xen_get_cpufreq_para get_para;
         struct xen_set_cpufreq_gov  set_gov;
         struct xen_set_cpufreq_para set_para;
+        struct xen_set_hwp_para     set_hwp;
         uint64_aligned_t get_avgfreq;
         uint32_t                    set_sched_opt_smt;
 #define XEN_SYSCTL_CX_UNLIMITED 0xffffffff

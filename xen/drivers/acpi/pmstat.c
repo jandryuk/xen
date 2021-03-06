@@ -318,6 +318,24 @@ static int set_cpufreq_gov(struct xen_sysctl_pm_op *op)
     return __cpufreq_set_policy(old_policy, &new_policy);
 }
 
+static int set_cpufreq_hwp(struct xen_sysctl_pm_op *op)
+{
+    struct cpufreq_policy *policy;
+
+    if ( !cpufreq_governor_internal )
+        return -EINVAL;
+
+    policy = per_cpu(cpufreq_cpu_policy, op->cpuid);
+
+    if ( !policy || !policy->governor )
+        return -EINVAL;
+
+    if ( strnicmp(policy->governor->name, "hwp-internal", CPUFREQ_NAME_LEN) )
+        return -EINVAL;
+
+    return set_hwp_para(policy, &op->u.set_hwp);
+}
+
 static int set_cpufreq_para(struct xen_sysctl_pm_op *op)
 {
     int ret = 0;
@@ -462,6 +480,12 @@ int do_pm_op(struct xen_sysctl_pm_op *op)
     case SET_CPUFREQ_GOV:
     {
         ret = set_cpufreq_gov(op);
+        break;
+    }
+
+    case SET_CPUFREQ_HWP:
+    {
+        ret = set_cpufreq_hwp(op);
         break;
     }
 
