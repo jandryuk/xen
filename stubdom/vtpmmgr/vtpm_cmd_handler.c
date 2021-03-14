@@ -47,6 +47,7 @@
 #include "vtpm_disk.h"
 #include "vtpmmgr.h"
 #include "tpm.h"
+#include "tpm2.h"
 #include "tpmrsa.h"
 #include "tcg.h"
 #include "mgmt_authority.h"
@@ -772,6 +773,52 @@ static int vtpmmgr_permcheck(struct tpm_opaque *opq)
 	return 1;
 }
 
+TPM_RESULT vtpmmgr_handle_getrandom(struct tpm_opaque *opaque,
+				    tpmcmd_t* tpmcmd)
+{
+	TPM_RESULT status = TPM_SUCCESS;
+	TPM_TAG tag;
+	UINT32 size;
+	UINT32 rand_offset;
+	UINT32 rand_size;
+	TPM_COMMAND_CODE ord;
+	BYTE *p;
+
+	p = unpack_TPM_RQU_HEADER(tpmcmd->req, &tag, &size, &ord);
+
+	if (!hw_is_tpm2()) {
+		size = TCPA_MAX_BUFFER_LENGTH;
+		TPMTRYRETURN(TPM_TransmitData(tpmcmd->req, tpmcmd->req_len,
+					      tpmcmd->resp, &size));
+		tpmcmd->resp_len = size;
+
+		return TPM_SUCCESS;
+	}
+
+	/* TPM_GetRandom req: <header><uint32 num bytes> */
+	unpack_UINT32(p, &rand_size);
+
+	/* Call TPM2_GetRandom but return a TPM_GetRandom response. */
+	/* TPM_GetRandom resp: <header><uint32 num bytes><num random bytes> */
+        rand_offset = sizeof_TPM_RSP_HEADER(tpmcmd->resp) +
+		      sizeof_UINT32(tpmcmd->resp);
+
+	TPMTRYRETURN(TPM2_GetRandom(&rand_size, tpmcmd->resp + rand_offset));
+
+	p = pack_TPM_RSP_HEADER(tpmcmd->resp, TPM_TAG_RSP_COMMAND,
+				rand_offset + rand_size, status);
+	p = pack_UINT32(p, rand_size);
+	tpmcmd->resp_len = rand_offset + rand_size;
+
+	return status;
+
+abort_egress:
+	tpmcmd->resp_len = VTPM_COMMAND_HEADER_SIZE;
+	pack_TPM_RSP_HEADER(tpmcmd->resp, tag + 3, tpmcmd->resp_len, status);
+
+	return status;
+}
+
 TPM_RESULT vtpmmgr_handle_cmd(
 		struct tpm_opaque *opaque,
 		tpmcmd_t* tpmcmd)
@@ -842,6 +889,7 @@ TPM_RESULT vtpmmgr_handle_cmd(
 		switch(ord) {
 		case TPM_ORD_GetRandom:
 			vtpmloginfo(VTPM_LOG_VTPM, "Passthrough: TPM_GetRandom\n");
+			return vtpmmgr_handle_getrandom(opaque, tpmcmd);
 			break;
 		case TPM_ORD_PcrRead:
 			vtpmloginfo(VTPM_LOG_VTPM, "Passthrough: TPM_PcrRead\n");

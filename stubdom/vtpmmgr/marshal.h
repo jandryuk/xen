@@ -891,6 +891,15 @@ inline int sizeof_TPM_AUTH_SESSION(const TPM_AUTH_SESSION* auth) {
 }
 
 static
+inline int sizeof_TPM_RQU_HEADER(BYTE* ptr) {
+	int rv = 0;
+	rv += sizeof_UINT16(ptr);
+	rv += sizeof_UINT32(ptr);
+	rv += sizeof_UINT32(ptr);
+	return rv;
+}
+
+static
 inline BYTE* pack_TPM_RQU_HEADER(BYTE* ptr,
 		TPM_TAG tag,
 		UINT32 size,
@@ -923,5 +932,6 @@ inline int unpack3_TPM_RQU_HEADER(BYTE* ptr, UINT32* pos, UINT32 max,
 #define pack_TPM_RSP_HEADER(p, t, s, r) pack_TPM_RQU_HEADER(p, t, s, r)
 #define unpack_TPM_RSP_HEADER(p, t, s, r) unpack_TPM_RQU_HEADER(p, t, s, r)
 #define unpack3_TPM_RSP_HEADER(p, l, m, t, s, r) unpack3_TPM_RQU_HEADER(p, l, m, t, s, r)
+#define sizeof_TPM_RSP_HEADER(p) sizeof_TPM_RQU_HEADER(p)
 
 #endif
